@@ -6,6 +6,9 @@ import { AuthProvider } from './contexts/AuthContext';
 import { WebSocketProvider } from './contexts/WebSocketContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
+// API Integration Example
+import ExampleApp from './components/examples/ExampleApp';
+
 // Client Portal Pages
 import { Login as ClientLogin } from './pages/client-portal/Login';
 import { Register } from './pages/client-portal/Register';
@@ -29,11 +32,15 @@ function App() {
       <AuthProvider>
         <WebSocketProvider>
           <Routes>
+            {/* API Integration Example - Default Route */}
+            <Route path="/" element={<ExampleApp />} />
+            <Route path="/api-demo" element={<ExampleApp />} />
+            
             {/* Client Portal Routes */}
-            <Route path="/login" element={<ClientLogin />} />
-            <Route path="/register" element={<Register />} />
+            <Route path="/client/login" element={<ClientLogin />} />
+            <Route path="/client/register" element={<Register />} />
             <Route
-              path="/dashboard"
+              path="/client/dashboard"
               element={
                 <ProtectedRoute>
                   <ClientDashboard />
@@ -41,7 +48,7 @@ function App() {
               }
             />
             <Route
-              path="/orders"
+              path="/client/orders"
               element={
                 <ProtectedRoute>
                   <Orders />
@@ -49,7 +56,7 @@ function App() {
               }
             />
             <Route
-              path="/orders/:id"
+              path="/client/orders/:id"
               element={
                 <ProtectedRoute>
                   <OrderDetail />
@@ -57,7 +64,7 @@ function App() {
               }
             />
             <Route
-              path="/new-order"
+              path="/client/new-order"
               element={
                 <ProtectedRoute>
                   <NewOrder />
@@ -65,13 +72,21 @@ function App() {
               }
             />
             <Route
-              path="/profile"
+              path="/client/profile"
               element={
                 <ProtectedRoute>
                   <Profile />
                 </ProtectedRoute>
               }
             />
+
+            {/* Legacy client routes (for backward compatibility) */}
+            <Route path="/login" element={<Navigate to="/client/login" replace />} />
+            <Route path="/register" element={<Navigate to="/client/register" replace />} />
+            <Route path="/dashboard" element={<Navigate to="/client/dashboard" replace />} />
+            <Route path="/orders" element={<Navigate to="/client/orders" replace />} />
+            <Route path="/new-order" element={<Navigate to="/client/new-order" replace />} />
+            <Route path="/profile" element={<Navigate to="/client/profile" replace />} />
 
             {/* Admin Portal Routes */}
             <Route path="/admin/login" element={<AdminLogin />} />
@@ -117,7 +132,6 @@ function App() {
             />
 
             {/* Default Routes */}
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
           </Routes>
 

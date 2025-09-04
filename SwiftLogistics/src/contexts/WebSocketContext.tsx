@@ -1,13 +1,25 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import type { ReactNode } from 'react';
-import { io as socketIO } from 'socket.io-client';
+import { WebSocketEvents } from '../types/api';
+import webSocketService from '../services/websocket';
 import { useAuth } from './AuthContext';
 
 interface WebSocketContextType {
-  socket: ReturnType<typeof socketIO> | null;
-  connected: boolean;
+  isConnected: boolean;
+  connectionState: string;
   subscribeToOrder: (orderId: string) => void;
   unsubscribeFromOrder: (orderId: string) => void;
+  subscribeToDriver: (driverId: string) => void;
+  unsubscribeFromDriver: (driverId: string) => void;
+  addEventListener: <T extends keyof WebSocketEvents>(
+    event: T,
+    listener: (data: WebSocketEvents[T]) => void
+  ) => void;
+  removeEventListener: <T extends keyof WebSocketEvents>(
+    event: T,
+    listener: (data: WebSocketEvents[T]) => void
+  ) => void;
+  reconnect: () => void;
 }
 
 const WebSocketContext = createContext<WebSocketContextType | null>(null);
@@ -21,54 +33,87 @@ export const useWebSocket = () => {
 };
 
 export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
-  const [socket, setSocket] = useState<ReturnType<typeof socketIO> | null>(null);
-  const [connected, setConnected] = useState(false);
-  const { token } = useAuth();
+  const [isConnected, setIsConnected] = useState(webSocketService.isConnected);
+  const [connectionState, setConnectionState] = useState(webSocketService.connectionState);
+  const { isAuthenticated } = useAuth();
 
+  // Update connection state
   useEffect(() => {
-    if (token) {
-      const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:3000';
-      const newSocket = socketIO(wsUrl, {
-        auth: { token },
-      });
+    const updateConnectionState = () => {
+      setIsConnected(webSocketService.isConnected);
+      setConnectionState(webSocketService.connectionState);
+    };
 
-      newSocket.on('connect', () => {
-        setConnected(true);
-      });
+    // Check connection status periodically
+    const interval = setInterval(updateConnectionState, 1000);
 
-      newSocket.on('disconnect', () => {
-        setConnected(false);
-      });
+    return () => clearInterval(interval);
+  }, []);
 
-      setSocket(newSocket);
-
-      return () => {
-        newSocket.close();
-      };
+  // Handle authentication changes
+  useEffect(() => {
+    if (isAuthenticated) {
+      const token = localStorage.getItem('accessToken');
+      if (token) {
+        webSocketService.updateToken(token);
+      }
+    } else {
+      webSocketService.disconnect();
     }
-  }, [token]);
+  }, [isAuthenticated]);
 
-  const subscribeToOrder = (orderId: string) => {
-    if (socket) {
-      socket.emit('subscribe', `orders/${orderId}`);
-    }
-  };
+  // Order tracking methods
+  const subscribeToOrder = useCallback((orderId: string) => {
+    webSocketService.joinOrderTracking(orderId);
+  }, []);
 
-  const unsubscribeFromOrder = (orderId: string) => {
-    if (socket) {
-      socket.emit('unsubscribe', `orders/${orderId}`);
-    }
+  const unsubscribeFromOrder = useCallback((orderId: string) => {
+    webSocketService.leaveOrderTracking(orderId);
+  }, []);
+
+  // Driver tracking methods
+  const subscribeToDriver = useCallback((driverId: string) => {
+    webSocketService.joinDriverTracking(driverId);
+  }, []);
+
+  const unsubscribeFromDriver = useCallback((driverId: string) => {
+    webSocketService.leaveDriverTracking(driverId);
+  }, []);
+
+  // Event management
+  const addEventListener = useCallback(<T extends keyof WebSocketEvents>(
+    event: T,
+    listener: (data: WebSocketEvents[T]) => void
+  ) => {
+    webSocketService.on(event, listener);
+  }, []);
+
+  const removeEventListener = useCallback(<T extends keyof WebSocketEvents>(
+    event: T,
+    listener: (data: WebSocketEvents[T]) => void
+  ) => {
+    webSocketService.off(event, listener);
+  }, []);
+
+  // Reconnection
+  const reconnect = useCallback(() => {
+    webSocketService.reconnect();
+  }, []);
+
+  const value: WebSocketContextType = {
+    isConnected,
+    connectionState,
+    subscribeToOrder,
+    unsubscribeFromOrder,
+    subscribeToDriver,
+    unsubscribeFromDriver,
+    addEventListener,
+    removeEventListener,
+    reconnect,
   };
 
   return (
-    <WebSocketContext.Provider 
-      value={{ 
-        socket, 
-        connected, 
-        subscribeToOrder, 
-        unsubscribeFromOrder 
-      }}
-    >
+    <WebSocketContext.Provider value={value}>
       {children}
     </WebSocketContext.Provider>
   );
