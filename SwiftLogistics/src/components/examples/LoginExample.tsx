@@ -91,14 +91,14 @@ const LoginExample: React.FC = () => {
         </button>
       </form>
       
-      <div className="mt-6 p-4 bg-gray-50 rounded-md">
+      {/* <div className="mt-6 p-4 bg-gray-50 rounded-md">
         <h3 className="font-medium text-gray-800 mb-2">Test Credentials:</h3>
         <div className="text-sm text-gray-600 space-y-1">
           <p><strong>Admin:</strong> admin@swifttrack.com / Admin123!</p>
           <p><strong>Client:</strong> client1@example.com / Client123!</p>
           <p><strong>Driver:</strong> driver1@swifttrack.com / Driver123!</p>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 };
