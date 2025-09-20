@@ -63,7 +63,7 @@ const ExampleAppContent: React.FC = () => {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <h1 className="text-2xl font-bold text-gray-900">SwiftTrack Demo</h1>
-              <span className="ml-3 text-sm text-gray-500">Frontend API Integration</span>
+              {/* <span className="ml-3 text-sm text-gray-500">Frontend API Integration</span> */}
             </div>
             
             <div className="flex items-center space-x-4">
@@ -111,7 +111,7 @@ const ExampleAppContent: React.FC = () => {
               disabled={tab.requiresAuth && !isAuthenticated}
             >
               {tab.label}
-              {tab.requiresAuth && !isAuthenticated && ' 🔒'}
+              {tab.requiresAuth && !isAuthenticated}
             </TabButton>
           ))}
         </div>
