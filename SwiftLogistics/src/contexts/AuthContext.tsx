@@ -4,9 +4,10 @@ import { jwtDecode } from 'jwt-decode';
 import { User, UserType, AuthResponse, ApiError } from '../types/api';
 import { authAPI } from '../services/api';
 import webSocketService from '../services/websocket';
+import { MockAuthService, MockUser } from '../services/mockData';
 
 interface AuthContextType {
-  user: User | null;
+  user: (User & { name?: string; phone?: string; address?: string; company?: string }) | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   userType: UserType | null;
@@ -38,7 +39,7 @@ interface DecodedToken {
 }
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<(User & { name?: string; phone?: string; address?: string; company?: string }) | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -112,6 +113,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (email: string, password: string, isDriver = false): Promise<AuthResponse> => {
     try {
       setIsLoading(true);
+      
+      // First try mock authentication for demo users
+      const mockResponse = MockAuthService.authenticate(email, password);
+      if (mockResponse) {
+        localStorage.setItem('accessToken', mockResponse.tokens.accessToken);
+        localStorage.setItem('refreshToken', mockResponse.tokens.refreshToken);
+        localStorage.setItem('user', JSON.stringify(mockResponse.user));
+        
+        setUser(mockResponse.user);
+        setIsAuthenticated(true);
+        webSocketService.updateToken(mockResponse.tokens.accessToken);
+        
+        return {
+          user: mockResponse.user,
+          tokens: mockResponse.tokens
+        };
+      }
+      
+      // Fall back to real API for other users
       const loginMethod = isDriver ? authAPI.driverLogin : authAPI.login;
       const response = await loginMethod({ email, password });
       

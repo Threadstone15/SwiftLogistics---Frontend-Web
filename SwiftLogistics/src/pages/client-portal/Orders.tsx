@@ -28,8 +28,22 @@ export const Orders = () => {
   const fetchOrders = async () => {
     try {
       const response = await orders.getAll();
-      setOrderList(response.data);
+      const ordersData = response.orders || [];
+      // Transform to match expected interface
+      const transformedOrders = ordersData.map((order: any) => ({
+        id: order.orderId,
+        status: order.status,
+        createdAt: order.createdAt,
+        destination: order.address,
+        estimatedDelivery: order.estimatedDelivery || 'TBD',
+        items: [{
+          name: order.orderType,
+          quantity: 1
+        }]
+      }));
+      setOrderList(transformedOrders);
     } catch (error: any) {
+      console.error('Error fetching orders:', error);
       toast.error(error.response?.data?.message || 'Failed to fetch orders');
     } finally {
       setLoading(false);

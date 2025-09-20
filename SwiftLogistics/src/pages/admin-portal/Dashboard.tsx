@@ -58,11 +58,20 @@ export const Dashboard = () => {
     try {
       // Fetch order statistics
       const ordersResponse = await orders.getAll();
-      const allOrders = ordersResponse.data;
+      const allOrders = ordersResponse.orders || [];
       
       const stats = allOrders.reduce(
         (acc: OrderStats, order: any) => {
-          acc[order.status as keyof OrderStats]++;
+          const status = order.status;
+          if (status === 'placed' || status === 'at_warehouse') {
+            acc.pending++;
+          } else if (status === 'picked' || status === 'in_transit') {
+            acc.in_progress++;
+          } else if (status === 'delivered' || status === 'confirmed') {
+            acc.delivered++;
+          } else if (status === 'failed') {
+            acc.failed++;
+          }
           acc.total++;
           return acc;
         },
@@ -92,10 +101,13 @@ export const Dashboard = () => {
             label: 'Orders Processed',
             data: throughput.values,
             backgroundColor: 'rgba(59, 130, 246, 0.5)',
+            borderColor: 'rgba(59, 130, 246, 1)',
+            borderWidth: 1,
           },
         ],
       });
     } catch (error: any) {
+      console.error('Dashboard data fetch error:', error);
       toast.error('Failed to fetch dashboard data');
     } finally {
       setLoading(false);

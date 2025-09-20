@@ -21,8 +21,17 @@ export const Dashboard = () => {
     const fetchOrders = async () => {
       try {
         const response = await orders.getAll();
-        setRecentOrders(response.data.slice(0, 5)); // Get last 5 orders
+        const ordersData = response.orders || [];
+        // Transform to match expected interface
+        const transformedOrders = ordersData.slice(0, 5).map((order: any) => ({
+          id: order.orderId,
+          status: order.status,
+          createdAt: order.createdAt,
+          destination: order.address
+        }));
+        setRecentOrders(transformedOrders);
       } catch (error: any) {
+        console.error('Error fetching orders:', error);
         toast.error(error.response?.data?.message || 'Failed to fetch orders');
       } finally {
         setLoading(false);

@@ -20,6 +20,13 @@ import {
   OrderStatus,
   User
 } from '../types/api';
+import { 
+  isDemoUser, 
+  mockOrdersAPI, 
+  mockTrackingAPI, 
+  mockDriversAPI, 
+  mockAdminAPI 
+} from './mockAPI';
 
 // Configuration
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -172,6 +179,11 @@ export const authAPI = {
 // Orders API
 export const ordersAPI = {
   getAll: (filters?: OrderFilters): Promise<OrdersResponse> => {
+    // Use mock data for demo users
+    if (isDemoUser()) {
+      return mockOrdersAPI.getOrders(filters);
+    }
+    
     const params = new URLSearchParams();
     if (filters) {
       Object.entries(filters).forEach(([key, value]) => {
@@ -183,11 +195,19 @@ export const ordersAPI = {
     return handleApiCall(() => api.get(`/orders?${params.toString()}`));
   },
   
-  getById: (id: string): Promise<Order> =>
-    handleApiCall(() => api.get(`/orders/${id}`)),
+  getById: (id: string): Promise<Order> => {
+    if (isDemoUser()) {
+      return mockOrdersAPI.getOrderById(id);
+    }
+    return handleApiCall(() => api.get(`/orders/${id}`));
+  },
     
-  create: (data: CreateOrderRequest): Promise<Order> =>
-    handleApiCall(() => api.post('/orders', data)),
+  create: (data: CreateOrderRequest): Promise<Order> => {
+    if (isDemoUser()) {
+      return mockOrdersAPI.createOrder(data);
+    }
+    return handleApiCall(() => api.post('/orders', data));
+  },
     
   update: (id: string, data: Partial<Order>): Promise<Order> =>
     handleApiCall(() => api.put(`/orders/${id}`, data)),
@@ -201,8 +221,12 @@ export const ordersAPI = {
   updateStatus: (id: string, status: OrderStatus): Promise<Order> =>
     handleApiCall(() => api.put(`/orders/${id}/status`, { status })),
     
-  getTracking: (id: string): Promise<TrackingData> =>
-    handleApiCall(() => api.get(`/orders/${id}/tracking`)),
+  getTracking: (id: string): Promise<TrackingData> => {
+    if (isDemoUser()) {
+      return mockTrackingAPI.getTrackingData(id);
+    }
+    return handleApiCall(() => api.get(`/orders/${id}/tracking`));
+  },
     
   rateOrder: (id: string, rating: number, comment?: string): Promise<void> =>
     handleApiCall(() => api.post(`/orders/${id}/rating`, { rating, comment })),
@@ -211,6 +235,15 @@ export const ordersAPI = {
 // Drivers API
 export const driversAPI = {
   getAll: (filters?: DriverFilters): Promise<{ drivers: Driver[]; total: number; page: number; limit: number }> => {
+    if (isDemoUser()) {
+      return mockDriversAPI.getDrivers(filters).then(response => ({
+        ...response,
+        total: response.drivers.length,
+        page: 1,
+        limit: response.drivers.length
+      }));
+    }
+    
     const params = new URLSearchParams();
     if (filters) {
       Object.entries(filters).forEach(([key, value]) => {
@@ -237,8 +270,12 @@ export const driversAPI = {
   updateAvailability: (available: boolean): Promise<void> =>
     handleApiCall(() => api.put('/drivers/availability', { available })),
     
-  getById: (id: string): Promise<Driver> =>
-    handleApiCall(() => api.get(`/drivers/${id}`)),
+  getById: (id: string): Promise<Driver> => {
+    if (isDemoUser()) {
+      return mockDriversAPI.getDriverById(id);
+    }
+    return handleApiCall(() => api.get(`/drivers/${id}`));
+  },
     
   getPerformance: (id: string): Promise<DriverPerformance> =>
     handleApiCall(() => api.get(`/drivers/${id}/performance`)),
@@ -246,13 +283,19 @@ export const driversAPI = {
 
 // Warehouse API
 export const warehouseAPI = {
-  getInventory: (): Promise<InventoryItem[]> =>
-    handleApiCall(() => api.get('/warehouse/inventory')),
-    
-  getLocations: (): Promise<WarehouseLocation[]> =>
-    handleApiCall(() => api.get('/warehouse/locations')),
-    
-  getLocationOrders: (location: string): Promise<Order[]> =>
+  getInventory: (): Promise<InventoryItem[]> => {
+    if (isDemoUser()) {
+      return mockAdminAPI.getInventory().then(response => response.items);
+    }
+    return handleApiCall(() => api.get('/warehouse/inventory'));
+  },
+
+  getLocations: (): Promise<WarehouseLocation[]> => {
+    if (isDemoUser()) {
+      return mockAdminAPI.getWarehouses().then(response => response.warehouses);
+    }
+    return handleApiCall(() => api.get('/warehouse/locations'));
+  },  getLocationOrders: (location: string): Promise<Order[]> =>
     handleApiCall(() => api.get(`/warehouse/${location}/orders`)),
     
   processOrder: (location: string, orderId: string): Promise<void> =>
@@ -273,8 +316,26 @@ export const trackingAPI = {
 
 // Admin API
 export const adminAPI = {
-  getDashboard: (): Promise<DashboardData> =>
-    handleApiCall(() => api.get('/admin/dashboard')),
+  getDashboard: (): Promise<DashboardData> => {
+    if (isDemoUser()) {
+      return mockAdminAPI.getDashboardData();
+    }
+    return handleApiCall(() => api.get('/admin/dashboard'));
+  },
+
+  getAudit: (): Promise<{ data: Array<{ id: string; type: string; description: string; timestamp: string }> }> => {
+    if (isDemoUser()) {
+      return mockAdminAPI.getAudit();
+    }
+    return handleApiCall(() => api.get('/admin/audit'));
+  },
+
+  getReports: (): Promise<{ data: { labels: string[]; values: number[] } }> => {
+    if (isDemoUser()) {
+      return mockAdminAPI.getReports();
+    }
+    return handleApiCall(() => api.get('/admin/reports'));
+  },
     
   getSystemHealth: (): Promise<SystemHealth> =>
     handleApiCall(() => api.get('/admin/system-health')),

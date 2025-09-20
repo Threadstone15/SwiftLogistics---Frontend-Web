@@ -5,6 +5,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import { AuthProvider } from './contexts/AuthContext';
 import { WebSocketProvider } from './contexts/WebSocketContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { DemoInfo } from './components/DemoInfo';
 
 // API Integration Example
 import ExampleApp from './components/examples/ExampleApp';

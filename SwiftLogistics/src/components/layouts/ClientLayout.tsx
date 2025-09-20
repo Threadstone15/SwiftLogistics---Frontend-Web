@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { DemoBanner } from '../DemoBanner';
 
 interface ClientLayoutProps {
   children: ReactNode;
@@ -143,6 +144,7 @@ export const ClientLayout = ({ children }: ClientLayoutProps) => {
 
       {/* Main content */}
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <DemoBanner />
         {children}
       </main>
     </div>
